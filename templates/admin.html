@@ -1,0 +1,106 @@
+
+<!DOCTYPE html><html><head><title>Admin Command Center</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style> .kpi-card{border:none; border-radius:15px; transition:0.3s;} .kpi-card:hover{transform:translateY(-5px);} .bg-gradient-blue{background: linear-gradient(45deg, #0d6efd, #0099ff); color:white;} .bg-gradient-green{background: linear-gradient(45deg, #198754, #20c997); color:white;} .bg-gradient-red{background: linear-gradient(45deg, #dc3545, #ff4d4d); color:white;} </style></head>
+<body class="bg-light p-4"><div class="container-fluid">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-4"><h3>Analytics Dashboard</h3></div>
+        <div class="col-md-8 text-end">
+            <form class="d-inline-flex gap-2 bg-white p-2 rounded shadow-sm">
+                <select name="category" class="form-select form-select-sm" style="width:150px;">
+                    <option {% if cat_filter=='All' %}selected{% endif %}>All</option>
+                    <option {% if cat_filter=='Sale' %}selected{% endif %}>Sale</option>
+                    <option {% if cat_filter=='Rent' %}selected{% endif %}>Rent</option>
+                    <option {% if cat_filter=='Booking' %}selected{% endif %}>Booking</option>
+                    <option {% if cat_filter=='Expense' %}selected{% endif %}>Expense</option>
+                </select>
+                <input type="date" name="start" value="{{start_date}}" class="form-control form-control-sm">
+                <input type="date" name="end" value="{{end_date}}" class="form-control form-control-sm">
+                <button class="btn btn-sm btn-dark px-3">Filter</button>
+                <a href="/" class="btn btn-sm btn-outline-primary px-3">Back to POS</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4"><div class="card kpi-card p-4 bg-gradient-blue shadow-sm"><h6>Gross Revenue</h6><h2>₹{{revenue}}</h2></div></div>
+        <div class="col-md-4"><div class="card kpi-card p-4 bg-gradient-red shadow-sm"><h6>Total Expenses</h6><h2>₹{{expenses_total}}</h2></div></div>
+        <div class="col-md-4"><div class="card kpi-card p-4 bg-gradient-green shadow-sm"><h6>Net Profit</h6><h2>₹{{profit}}</h2></div></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6"><div class="card p-4 border-0 shadow-sm"><h6>Revenue Share</h6><canvas id="revChart" style="max-height:300px;"></canvas></div></div>
+        <div class="col-md-6"><div class="card p-4 border-0 shadow-sm"><h6>Financial Trend (Rev vs Exp)</h6><canvas id="trendChart" style="max-height:300px;"></canvas></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-7">
+            <div class="card p-4 border-0 shadow-sm mb-4">
+                <h6 class="fw-bold mb-3">Backend Inventory (Update Stock/Price)</h6>
+                <form action="/product/add" method="POST" class="row g-2 mb-3 bg-light p-3 rounded">
+                    <div class="col-md-4"><input name="name" class="form-control" placeholder="Item Name" required></div>
+                    <div class="col-md-2"><select name="cat" class="form-select"><option>Sale</option><option>Rent</option></select></div>
+                    <div class="col-md-2"><input name="buy" class="form-control" placeholder="Buy Cost"></div>
+                    <div class="col-md-2"><input name="sell" class="form-control" placeholder="Sell Price"></div>
+                    <div class="col-md-2"><input name="stock" class="form-control" placeholder="+Qty"></div>
+                    <div class="col-md-4 mt-2"><label class="small">Low Stock Limit</label><input name="low_limit" class="form-control" value="5"></div>
+                    <button class="btn btn-primary btn-sm mt-2 fw-bold">Sync to Database</button>
+                </form>
+                <table class="table table-hover table-sm small">
+                    <thead class="table-light"><tr><th>Name</th><th>Cat</th><th>Cost</th><th>Price</th><th>Stock</th><th>Status</th></tr></thead>
+                    <tbody>{% for p in products %}<tr><td>{{p.name}}</td><td>{{p.category}}</td><td>{{p.buy_price}}</td><td>{{p.sell_price}}</td><td>{{p.stock}}</td><td>{% if p.stock <= p.low_stock_limit %}<span class="text-danger fw-bold">Low</span>{% else %}<span class="text-success">OK</span>{% endif %}</td></tr>{% endfor %}</tbody>
+                </table>
+            </div>
+            <div class="card p-4 border-0 shadow-sm">
+                <h6>Sales & Booking Logs</h6>
+                <table class="table table-sm small">
+                    <thead><tr><th>Time</th><th>Item</th><th>Total</th><th>Desc</th></tr></thead>
+                    <tbody>{% for t in txns %}<tr><td>{{t.timestamp.strftime('%d %b %H:%M')}}</td><td>{{t.item_name}}</td><td>₹{{t.total_sell}}</td><td>{{t.description or '-'}}</td></tr>{% endfor %}</tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card p-4 border-0 shadow-sm mb-4 border-start border-4 border-danger bg-white">
+                <h6 class="text-danger fw-bold">Log New Expense</h6>
+                <form action="/add_expense" method="POST" class="row g-2">
+                    <div class="col-md-7"><input name="title" class="form-control" placeholder="Description (e.g. Salary, Electricity)" required></div>
+                    <div class="col-md-5"><input name="amount" class="form-control" placeholder="Amount" required></div>
+                    <div class="col-md-12 mt-2"><select name="cat" class="form-select"><option>Electricity</option><option>Salary</option><option>Cleaning</option><option>Repair</option><option>Misc</option></select></div>
+                    <button class="btn btn-danger w-100 btn-sm mt-3 fw-bold">Record Expense</button>
+                </form>
+            </div>
+            <div class="card p-4 border-0 shadow-sm mb-4">
+                <h6>Expense Ledger</h6>
+                <table class="table table-sm small">
+                    <thead><tr><th>Date</th><th>Title</th><th>Amount</th></tr></thead>
+                    <tbody>{% for e in expenses %}<tr><td>{{e.timestamp.strftime('%d %b')}}</td><td>{{e.title}}</td><td class="text-danger">₹{{e.amount}}</td></tr>{% endfor %}</tbody>
+                </table>
+            </div>
+            <div class="card p-4 border-0 shadow-sm">
+                <h6>Stock Audit History</h6>
+                <ul class="list-group list-group-flush small">
+                    {% for h in stock_history %}
+                    <li class="list-group-item d-flex justify-content-between"><span>+{{h.added_qty}} {{h.product_name}}</span><span class="text-muted">{{h.timestamp.strftime('%H:%M')}}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    // Revenue Pie Chart
+    new Chart(document.getElementById('revChart'), { type: 'pie', data: { 
+        labels: Object.keys({{chart_data|tojson}}), 
+        datasets: [{ data: Object.values({{chart_data|tojson}}), backgroundColor:['#0d6efd','#198754','#ffc107','#6f42c1'] }] 
+    }});
+
+    // Trend Bar Chart
+    new Chart(document.getElementById('trendChart'), { type: 'bar', data: { 
+        labels: ['Current Period'], 
+        datasets: [
+            { label: 'Revenue', data: [{{revenue}}], backgroundColor: '#0d6efd' },
+            { label: 'Expenses', data: [{{expenses_total}}], backgroundColor: '#dc3545' }
+        ] 
+    }});
+</script></body></html>
