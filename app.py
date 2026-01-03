@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = 'unity_arena_ultra_erp_v8'
 
 # PostgreSQL Connection
-DB_URL = 'postgresql://UnityAnalytics_tongueraw:UnityShuttleArena%40123@njpzc2.h.filess.io:5434/UnityAnalytics_tongueraw'
+DB_URL = 'postgresql://neondb_owner:npg_lXSIMtk05eHv@ep-bold-wave-adctsiey-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
