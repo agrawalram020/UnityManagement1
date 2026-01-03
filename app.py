@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = 'unity_arena_ultra_erp_v8'
 
 # PostgreSQL Connection
-DB_URL = 'postgresql://InventoryManagement_puttingarm:UnityShuttleArena%40123@5zvxg5.h.filess.io:5434/InventoryManagement_puttingarm'
+DB_URL = 'postgresql://UnityAnalytics_unclewave:UnityShuttleArena%2540123@n-b9t1.h.filess.io:5434/UnityAnalytics_unclewave'
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
